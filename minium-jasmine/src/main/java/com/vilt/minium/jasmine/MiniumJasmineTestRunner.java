@@ -19,6 +19,8 @@ import org.mozilla.javascript.tools.shell.Global;
 import org.springframework.core.io.Resource;
 import org.springframework.test.context.TestContextManager;
 import org.springframework.test.context.support.DependencyInjectionTestExecutionListener;
+import org.springframework.util.ReflectionUtils;
+import org.springframework.util.ReflectionUtils.FieldCallback;
 
 import be.klak.junit.jasmine.JasmineTestRunner;
 import be.klak.rhino.RhinoContext;
@@ -36,19 +38,23 @@ public class MiniumJasmineTestRunner extends JasmineTestRunner {
     @Override
     protected Object createTestClassInstance() {
         try {
-            Object testInstance = super.createTestClassInstance();
+            final Object testInstance = super.createTestClassInstance();
             contextManager.prepareTestInstance(testInstance);
             
-            for (Field f : testClass.getDeclaredFields()) {
-                f.setAccessible(true);
-                JsVariable jsVariable = f.getAnnotation(JsVariable.class);
-                if (jsVariable == null) continue;
+            ReflectionUtils.doWithFields(testClass, new FieldCallback() {
                 
-                String varName = jsVariable.value();
-                checkNotNull(varName, "@JsVariable.value() should not be null");
-                Object val = getVal(jsVariable, f.get(testInstance));
-                put(rhinoContext, varName, val);
-            }
+                @Override
+                public void doWith(Field f) throws IllegalArgumentException, IllegalAccessException {
+                    f.setAccessible(true);
+                    JsVariable jsVariable = f.getAnnotation(JsVariable.class);
+                    if (jsVariable == null) return;
+                    
+                    String varName = jsVariable.value();
+                    checkNotNull(varName, "@JsVariable.value() should not be null");
+                    Object val = getVal(jsVariable, f.get(testInstance));
+                    put(rhinoContext, varName, val);
+                }
+            });
             
             return testInstance;
         } catch (RuntimeException e) {
@@ -58,31 +64,38 @@ public class MiniumJasmineTestRunner extends JasmineTestRunner {
         }
     }
     
-    private Object getVal(JsVariable jsVariable, Object object) throws ParseException, IOException {
-        switch (jsVariable.resourceType()) {
-        case NONE:
-            return object;
-        case JSON:
-            if (object instanceof String) {
-                return parseJson(rhinoContext, (String) object);
-            }
-            else if (object instanceof Resource) {
-                return parseJson(rhinoContext, (Resource) object);
-            }
-        case STRING:
-            if (object instanceof String) {
+    private Object getVal(JsVariable jsVariable, Object object) {
+        checkNotNull(jsVariable.resourceType());
+        try {
+            switch (jsVariable.resourceType()) {
+            case NONE:
                 return object;
-            }
-            else if (object instanceof Resource) {
-                InputStream is = ((Resource) object).getInputStream();
-                try {
-                    return IOUtils.toString(is, Charsets.UTF_8.name());
-                } finally {
-                    IOUtils.closeQuietly(is);
+            case JSON:
+                if (object instanceof String) {
+                    return parseJson(rhinoContext, (String) object);
+                }
+                else if (object instanceof Resource) {
+                    return parseJson(rhinoContext, (Resource) object);
+                }
+            case STRING:
+                if (object instanceof String) {
+                    return object;
+                }
+                else if (object instanceof Resource) {
+                    InputStream is = ((Resource) object).getInputStream();
+                    try {
+                        return IOUtils.toString(is, Charsets.UTF_8.name());
+                    } finally {
+                        IOUtils.closeQuietly(is);
+                    }
                 }
             }
+        } catch (ParseException e) {
+            throw propagate(e);
+        } catch (IOException e) {
+            throw propagate(e);
         }
-        throw new IllegalArgumentException();
+        throw new IllegalStateException();
     }
 
     @Override
