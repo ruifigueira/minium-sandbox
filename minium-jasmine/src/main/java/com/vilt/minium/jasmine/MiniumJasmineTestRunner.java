@@ -1,6 +1,7 @@
 package com.vilt.minium.jasmine;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.base.Throwables.propagate;
 
 import java.io.IOException;
@@ -11,12 +12,15 @@ import java.util.List;
 
 import org.apache.commons.io.Charsets;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Scriptable;
 import org.mozilla.javascript.json.JsonParser;
 import org.mozilla.javascript.json.JsonParser.ParseException;
 import org.mozilla.javascript.tools.shell.Global;
+import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.core.io.Resource;
+import org.springframework.core.io.ResourceLoader;
 import org.springframework.test.context.TestContextManager;
 import org.springframework.test.context.support.DependencyInjectionTestExecutionListener;
 import org.springframework.util.ReflectionUtils;
@@ -30,7 +34,8 @@ import com.vilt.minium.script.MiniumContextLoader;
 public class MiniumJasmineTestRunner extends JasmineTestRunner {
 
     private TestContextManager contextManager;
-
+    private ResourceLoader resourceLoader = new DefaultResourceLoader();
+    
     public MiniumJasmineTestRunner(Class<?> testClass) throws IOException {
         super(testClass);
     }
@@ -51,8 +56,13 @@ public class MiniumJasmineTestRunner extends JasmineTestRunner {
                     
                     String varName = jsVariable.value();
                     checkNotNull(varName, "@JsVariable.value() should not be null");
-                    Object val = getVal(jsVariable, f.get(testInstance));
+                    Object fieldVal = f.get(testInstance);
+                    Object val = getVal(jsVariable, f.getType(), fieldVal);
                     put(rhinoContext, varName, val);
+                    
+                    if (fieldVal == null && val != null) {
+                        f.set(testInstance, val);
+                    }
                 }
             });
             
@@ -64,38 +74,34 @@ public class MiniumJasmineTestRunner extends JasmineTestRunner {
         }
     }
     
-    private Object getVal(JsVariable jsVariable, Object object) {
-        checkNotNull(jsVariable.resourceType());
+    private Object getVal(JsVariable jsVariable, Class<?> clazz, Object object) {
         try {
-            switch (jsVariable.resourceType()) {
-            case NONE:
-                return object;
-            case JSON:
-                if (object instanceof String) {
-                    return parseJson(rhinoContext, (String) object);
-                }
-                else if (object instanceof Resource) {
-                    return parseJson(rhinoContext, (Resource) object);
-                }
-            case STRING:
-                if (object instanceof String) {
-                    return object;
-                }
-                else if (object instanceof Resource) {
-                    InputStream is = ((Resource) object).getInputStream();
+            if (StringUtils.isNotEmpty(jsVariable.resource())) {
+                Resource resource = resourceLoader.getResource(jsVariable.resource());
+                checkState(resource.exists() && resource.isReadable());                
+                
+                if (clazz == String.class) {
+                    InputStream is = resource.getInputStream();
                     try {
                         return IOUtils.toString(is, Charsets.UTF_8.name());
                     } finally {
                         IOUtils.closeQuietly(is);
                     }
                 }
+                else {
+                    Object val = parseJson(rhinoContext, resource);
+                    checkState(clazz.isAssignableFrom(val.getClass()));
+                    return val;
+                }
             }
-        } catch (ParseException e) {
-            throw propagate(e);
+            else {
+                return object;
+            }
         } catch (IOException e) {
             throw propagate(e);
+        } catch (ParseException e) {
+            throw propagate(e);
         }
-        throw new IllegalStateException();
     }
 
     @Override
