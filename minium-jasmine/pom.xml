@@ -3,7 +3,7 @@
 	<parent>
 		<groupId>com.vilt-group.minium</groupId>
 		<artifactId>minium-sandbox</artifactId>
-		<version>0.9.1</version>
+		<version>0.9.1-SNAPSHOT</version>
 	</parent>
 	
 	<artifactId>minium-jasmine</artifactId>
