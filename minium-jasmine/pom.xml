@@ -10,7 +10,7 @@
 	<name>Minium - Jasmine</name>
 
 	<properties>
-		<minium.version>0.9.1-SNAPSHOT</minium.version>
+		<minium.version>0.9.1</minium.version>
 		<selenium.version>2.35.0</selenium.version>
 	</properties>
 	
