@@ -1,3 +1,18 @@
+/*
+ * Copyright (C) 2013 The Minium Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.vilt.minium.recorder.impl;
 
 import static java.nio.ByteOrder.LITTLE_ENDIAN;
@@ -44,74 +59,74 @@ import com.vilt.minium.WebElementsDriver;
 /**
  * Uses virtual audio capture device:
  * http://sourceforge.net/projects/virtualaudiodev/
- * 
+ *
  * @author rui.figueira
  */
 public class WebElementsScreenRecorder extends ScreenRecorder {
-	
-	private File movieFile;
 
-	public WebElementsScreenRecorder() throws HeadlessException, IOException, AWTException {
-		this(null);
-	}
-	
-	public void start(File file) throws IOException {
-		movieFile = file;
-		super.start();
-	}
-	
-	@Override
-	public void stop() throws IOException {
-		super.stop();
-	}
+    private File movieFile;
 
-	@Override
-	protected File createMovieFile(Format fileFormat) throws IOException {
-		if (movieFile == null) {
-			return super.createMovieFile(fileFormat);			
-		}
-		return movieFile;
-	}
-	
-	public WebElementsScreenRecorder(WebElementsDriver<?> wd) throws HeadlessException, IOException, AWTException {
-		super(
-				GraphicsEnvironment
-					.getLocalGraphicsEnvironment()
-					.getDefaultScreenDevice()
-					.getDefaultConfiguration(), 
-				getWebDriverRectangle(wd),
-				new Format(MediaTypeKey, FILE, MimeTypeKey, MIME_AVI), 
-				new Format(
-						MediaTypeKey, VIDEO, 
-						EncodingKey, ENCODING_AVI_TECHSMITH_SCREEN_CAPTURE, 
-						CompressorNameKey, COMPRESSOR_NAME_AVI_TECHSMITH_SCREEN_CAPTURE, 
-						DepthKey, (int) 24, 
-						FrameRateKey, Rational.valueOf(15), 
-						QualityKey, 1.0f, 
-						KeyFrameIntervalKey, (int) (15 * 60),
-						DataClassKey, byte[].class,
-						FixedFrameRateKey, true), 
-				new Format(
-						MediaTypeKey, MediaType.VIDEO, 
-						EncodingKey, "black", 
-						FrameRateKey, Rational.valueOf(30)),
-				new Format(
-						VideoFormatKeys.MediaTypeKey, AUDIO, 
-						VideoFormatKeys.EncodingKey, ENCODING_PCM_SIGNED, 
-						VideoFormatKeys.FrameRateKey, new Rational(44100L, 1L), 
-						SampleSizeInBitsKey, Integer.valueOf(16), 
-						ChannelsKey, Integer.valueOf(2), 
-						SampleRateKey, new Rational(44100L, 1L), 
-						SignedKey, Boolean.valueOf(true), 
-						ByteOrderKey, LITTLE_ENDIAN),
-				null);
-	}
+    public WebElementsScreenRecorder() throws HeadlessException, IOException, AWTException {
+        this(null);
+    }
 
-	private static Rectangle getWebDriverRectangle(WebElementsDriver<?> wd) {
-		if (wd == null) return null;
+    public void start(File file) throws IOException {
+        movieFile = file;
+        super.start();
+    }
 
-		Dimension size = wd.manage().window().getSize();
-		Point position = wd.manage().window().getPosition();
-		return new Rectangle(position.x, position.y, size.width, size.height);
-	}
+    @Override
+    public void stop() throws IOException {
+        super.stop();
+    }
+
+    @Override
+    protected File createMovieFile(Format fileFormat) throws IOException {
+        if (movieFile == null) {
+            return super.createMovieFile(fileFormat);
+        }
+        return movieFile;
+    }
+
+    public WebElementsScreenRecorder(WebElementsDriver<?> wd) throws HeadlessException, IOException, AWTException {
+        super(
+                GraphicsEnvironment
+                    .getLocalGraphicsEnvironment()
+                    .getDefaultScreenDevice()
+                    .getDefaultConfiguration(),
+                getWebDriverRectangle(wd),
+                new Format(MediaTypeKey, FILE, MimeTypeKey, MIME_AVI),
+                new Format(
+                        MediaTypeKey, VIDEO,
+                        EncodingKey, ENCODING_AVI_TECHSMITH_SCREEN_CAPTURE,
+                        CompressorNameKey, COMPRESSOR_NAME_AVI_TECHSMITH_SCREEN_CAPTURE,
+                        DepthKey, 24,
+                        FrameRateKey, Rational.valueOf(15),
+                        QualityKey, 1.0f,
+                        KeyFrameIntervalKey, 15 * 60,
+                        DataClassKey, byte[].class,
+                        FixedFrameRateKey, true),
+                new Format(
+                        MediaTypeKey, MediaType.VIDEO,
+                        EncodingKey, "black",
+                        FrameRateKey, Rational.valueOf(30)),
+                new Format(
+                        VideoFormatKeys.MediaTypeKey, AUDIO,
+                        VideoFormatKeys.EncodingKey, ENCODING_PCM_SIGNED,
+                        VideoFormatKeys.FrameRateKey, new Rational(44100L, 1L),
+                        SampleSizeInBitsKey, Integer.valueOf(16),
+                        ChannelsKey, Integer.valueOf(2),
+                        SampleRateKey, new Rational(44100L, 1L),
+                        SignedKey, Boolean.valueOf(true),
+                        ByteOrderKey, LITTLE_ENDIAN),
+                null);
+    }
+
+    private static Rectangle getWebDriverRectangle(WebElementsDriver<?> wd) {
+        if (wd == null) return null;
+
+        Dimension size = wd.manage().window().getSize();
+        Point position = wd.manage().window().getPosition();
+        return new Rectangle(position.x, position.y, size.width, size.height);
+    }
 }
