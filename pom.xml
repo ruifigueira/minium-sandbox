@@ -11,6 +11,12 @@
 	<name>Minium - Sandbox</name>
 	<packaging>pom</packaging>
 
+    <scm>
+        <connection>scm:git:git://github.com/ruifigueira/minium-sandbox.git</connection>
+        <developerConnection>scm:git:ssh://git@github.com/ruifigueira/minium-sandbox.git</developerConnection>
+        <url>https://github.com/ruifigueira/minium-sandbox</url>
+    </scm>
+
 	<modules>
 		<!--
 		<module>minium-fest</module>
