@@ -21,6 +21,7 @@ import org.monte.screenrecorder.ScreenRecorder.State;
 
 import com.vilt.minium.CoreWebElements;
 import com.vilt.minium.actions.InteractionPerformer;
+import com.vilt.minium.impl.WebElementsDriverProvider;
 import com.vilt.minium.recorder.impl.WebElementsScreenRecorder;
 
 public class RecorderInteractions {
@@ -48,7 +49,7 @@ public class RecorderInteractions {
     public static void startRecordingWindow(CoreWebElements<?> elems, File file) {
         try {
             if (recorder != null && recorder.getState() == State.RECORDING) throw new IllegalStateException("Recording already in progress");
-            recorder = new WebElementsScreenRecorder(null);
+            recorder = new WebElementsScreenRecorder(((WebElementsDriverProvider<?>) elems).webDriver());
             new InteractionPerformer().perform(new StartRecorderInteraction(elems, recorder, file));
         } catch (Exception e) {
             throw new RuntimeException(e);
